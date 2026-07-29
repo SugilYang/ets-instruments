@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ETS 계측기 관리시스템</title>
+<style>
+:root{
+  --navy:#1e3a5f; --navy-d:#152a46; --navy-l:#2c4f7c; --accent:#3b82f6;
+  --bg:#f1f4f9; --card:#ffffff; --line:#e2e8f0;
+  --tx:#1e293b; --tx2:#64748b; --tx3:#94a3b8;
+  --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --info:#2563eb;
+  --sb:232px; --r:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif;background:var(--bg);color:var(--tx);font-size:15px;line-height:1.5;word-break:keep-all}
+button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:inherit;color:inherit}
+input,select,textarea{font-family:inherit;font-size:15px;border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;width:100%;background:#fff;color:var(--tx)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin:12px 0 4px}
+
+/* ═══ 쇼핑 홈 (일반 유저) ═══ */
+.shop-hero{background:linear-gradient(135deg,var(--navy),var(--navy-l));border-radius:18px;padding:26px 20px;color:#fff;margin-bottom:16px}
+.shop-hero h2{font-size:19px;margin-bottom:3px}
+.shop-hero p{font-size:12.5px;color:#b9cbe0;margin-bottom:14px}
+.shop-search{display:flex;background:#fff;border-radius:12px;overflow:hidden;padding:3px 3px 3px 14px;align-items:center;gap:8px}
+.shop-search span{font-size:16px}
+.shop-search input{border:none;padding:11px 0;font-size:15px}
+.shop-search input:focus{border:none}
+.cat-tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
+@media(max-width:640px){.cat-tiles{grid-template-columns:repeat(3,1fr)}}
+.cat-tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 6px;text-align:center;cursor:pointer;transition:transform .12s,box-shadow .15s}
+.cat-tile:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(30,58,95,.12)}
+.cat-tile .ci{font-size:26px}
+.cat-tile .cn{font-size:12px;font-weight:700;margin-top:5px}
+.cat-tile .cc{font-size:10.5px;color:var(--tx3)}
+.hscroll{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
+.hscroll .inst-card{flex:0 0 158px}
+.rank-num{width:26px;height:26px;border-radius:8px;background:#eef2f7;color:var(--tx2);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.rank-num.top{background:var(--navy);color:#fff}
+.card-act{width:100%;padding:8px 0;font-size:12.5px;font-weight:700;border-top:1px solid #f1f5f9;color:var(--navy)}
+.card-act:hover{background:#f8fafc}
+.card-act.dis{color:#c3cdd9;cursor:default}
+.cart-item{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid #f1f5f9}
+.cart-item:last-child{border-bottom:none}
+.cart-x{color:var(--tx3);font-size:18px;padding:4px 8px}
+.cbadge{background:var(--bad);color:#fff;font-size:10px;font-weight:800;border-radius:9px;min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;vertical-align:2px}
+
+/* ═══ 로그인 ═══ */
+#loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,var(--navy-d) 0%,var(--navy) 55%,#31577f 100%);padding:20px}
+.login-box{background:#fff;border-radius:20px;padding:36px 30px;width:100%;max-width:390px;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+.login-logo{width:58px;height:58px;border-radius:16px;background:var(--navy);color:#fff;font-size:27px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.login-box h1{font-size:20px;color:var(--navy);text-align:center}
+.login-box .sub{text-align:center;color:var(--tx2);font-size:13px;margin:5px 0 8px}
+.btn-primary{background:var(--navy);color:#fff;border-radius:10px;padding:13px;width:100%;font-weight:700;font-size:15px;margin-top:20px}
+.btn-primary:active{background:var(--navy-d)}
+.login-err{color:var(--bad);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+
+/* ═══ 레이아웃: PC 사이드바 / 모바일 하단탭 ═══ */
+#appView{display:none}
+#sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sb);background:var(--navy-d);color:#fff;z-index:60;display:flex;flex-direction:column;padding:18px 12px}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:4px 10px 18px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:14px}
+.sb-logo .ic{width:38px;height:38px;border-radius:11px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.sb-logo .tt{font-size:14.5px;font-weight:800;line-height:1.25}
+.sb-logo .tt small{display:block;font-size:10.5px;font-weight:500;color:#8fa8c4}
+.sb-nav{flex:1;overflow-y:auto}
+.sb-nav button{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border-radius:10px;font-size:14px;font-weight:600;color:#a9bdd4;margin-bottom:3px;text-align:left}
+.sb-nav button .em{font-size:17px;width:22px;text-align:center}
+.sb-nav button.on{background:rgba(59,130,246,.22);color:#fff}
+.sb-nav button:hover{color:#fff}
+.sb-nav .sb-cap{font-size:10.5px;font-weight:700;color:#5f7a99;padding:12px 12px 5px;letter-spacing:.5px}
+.sb-user{border-top:1px solid rgba(255,255,255,.12);padding:13px 10px 4px;font-size:13px}
+.sb-user .nm{font-weight:700}
+.sb-user .dp{font-size:11.5px;color:#8fa8c4;margin:1px 0 8px}
+.sb-user button{font-size:12px;color:#8fa8c4;padding:2px 0}
+.sb-user button:hover{color:#fff}
+
+#topbar{display:none}
+#bottomNav{display:none}
+
+#content{margin-left:var(--sb);padding:22px 26px 60px;max-width:1120px}
+.pg-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+.pg-head h2{font-size:20px;color:var(--navy)}
+.pg-head .dt{font-size:12.5px;color:var(--tx3)}
+
+@media(max-width:899px){
+  #sidebar{display:none}
+  #content{margin-left:0;padding:14px 14px 90px}
+  #topbar{display:flex;position:sticky;top:0;z-index:55;background:var(--navy);color:#fff;padding:12px 14px;align-items:center;gap:10px;margin:-14px -14px 14px}
+  #topbar .tt{flex:1;font-size:15.5px;font-weight:800}
+  #bottomNav{display:flex;position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:60;padding:5px 2px calc(5px + env(safe-area-inset-bottom))}
+  #bottomNav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 0;font-size:10px;font-weight:600;color:var(--tx3)}
+  #bottomNav button .em{font-size:19px}
+  #bottomNav button.on{color:var(--navy)}
+  .pg-head h2{font-size:17px}
+}
+
+/* ═══ 공통 ═══ */
+.page{display:none}
+.page.on{display:block;animation:fd .18s ease}
+@keyframes fd{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.sec-title{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-title .cnt{background:#eef2f7;color:var(--tx2);font-size:12px;border-radius:10px;padding:1px 9px;font-weight:700}
+.sec-title .more{margin-left:auto;font-size:12px;color:var(--accent);font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px;white-space:nowrap}
+.c-ok{background:#dcfce7;color:#15803d}.c-rent{background:#dbeafe;color:#1d4ed8}
+.c-wait{background:#fef3c7;color:#b45309}.c-ban{background:#f1f5f9;color:#64748b}
+.c-late{background:#fee2e2;color:#b91c1c}.c-appr{background:#e0e7ff;color:#4338ca}
+.dday{font-size:12px;font-weight:800;border-radius:6px;padding:2px 8px;white-space:nowrap}
+.d-over{background:var(--bad);color:#fff}.d-red{background:#fee2e2;color:#b91c1c}
+.d-org{background:#ffedd5;color:#c2410c}.d-yel{background:#fef9c3;color:#a16207}.d-grn{background:#dcfce7;color:#15803d}
+.btn{border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700}
+.b-navy{background:var(--navy);color:#fff}.b-green{background:var(--ok);color:#fff}
+.b-red{background:#fee2e2;color:#b91c1c}.b-gray{background:#eef2f7;color:var(--tx2)}
+.b-blue{background:var(--info);color:#fff}.b-line{border:1.5px solid var(--line);color:var(--tx2);background:#fff}
+.empty{text-align:center;color:var(--tx3);padding:26px 0;font-size:13.5px}
+.row-item{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap}
+.row-item:last-child{border-bottom:none}
+.row-main{flex:1;min-width:180px}
+.row-main .tt{font-weight:700;font-size:14px}
+.row-main .tt .cd{color:var(--tx3);font-weight:500;font-size:12px}
+.row-main .ss{font-size:12.5px;color:var(--tx2);margin-top:1px}
+.row-btns{display:flex;gap:6px;flex-wrap:wrap}
+.mini-thumb{width:46px;height:46px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);object-fit:contain;flex:none}
+.mini-thumb.noimg{display:flex;align-items:center;justify-content:center;color:var(--tx3);font-size:20px}
+
+/* ═══ 홈 대시보드 ═══ */
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px 8px;text-align:center;cursor:pointer;transition:box-shadow .15s}
+.stat:hover{box-shadow:0 4px 14px rgba(30,58,95,.1)}
+.stat .n{font-size:25px;font-weight:800;color:var(--navy)}
+.stat .t{font-size:11.5px;color:var(--tx2);margin-top:2px;font-weight:600}
+.stat.red .n{color:var(--bad)}.stat.blue .n{color:var(--info)}.stat.green .n{color:var(--ok)}.stat.org .n{color:var(--warn)}
+@media(max-width:620px){.stat .n{font-size:19px}.stat .t{font-size:10px}.stat{padding:11px 4px}}
+.feed-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
+.feed-item:last-child{border-bottom:none}
+.feed-item .fi{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex:none}
+.feed-item .fm{flex:1}.feed-item .ft{font-size:11px;color:var(--tx3)}
+.f-req{background:#fef3c7}.f-ok{background:#dcfce7}.f-rent{background:#dbeafe}.f-ret{background:#f1f5f9}.f-late{background:#fee2e2}
+
+/* CSS 차트 */
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:110px;padding-top:8px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.bar-col .bv{font-size:10.5px;font-weight:700;color:var(--tx2)}
+.bar-col .bb{width:70%;max-width:34px;background:linear-gradient(180deg,#5c93d8,var(--navy-l));border-radius:5px 5px 0 0;min-height:3px;transition:height .4s ease}
+.bar-col .bl{font-size:10.5px;color:var(--tx3)}
+.hbar{margin-bottom:9px}
+.hbar .hl{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.hbar .hl b{color:var(--tx)}.hbar .hl span{color:var(--tx2)}
+.hbar .ht{height:8px;background:#eef2f7;border-radius:4px;overflow:hidden}
+.hbar .hf{height:100%;border-radius:4px;background:var(--navy-l)}
+
+/* ═══ 계측기 목록 ═══ */
+.tools{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.tools input{flex:1;min-width:160px}
+.tools select{width:auto;min-width:120px}
+.vtoggle{display:flex;border:1.5px solid var(--line);border-radius:9px;overflow:hidden}
+.vtoggle button{padding:9px 13px;font-size:15px;color:var(--tx3);background:#fff}
+.vtoggle button.on{background:var(--navy);color:#fff}
+.filter-chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.filter-chips button{border:1.5px solid var(--line);background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;font-weight:600;color:var(--tx2);white-space:nowrap;flex:none}
+.filter-chips button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.filter-chips button .fc{font-size:11px;opacity:.75}
+.inst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+.inst-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .12s,box-shadow .15s;position:relative}
+.inst-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(30,58,95,.13)}
+.inst-card .ph{width:100%;aspect-ratio:4/3;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.inst-card .ph img{width:100%;height:100%;object-fit:contain}
+.inst-card .ph .noimg{color:var(--tx3);font-size:28px}
+.inst-card .st-abs{position:absolute;top:8px;left:8px}
+.inst-card .bd{padding:10px 12px}
+.inst-card .nm{font-weight:700;font-size:13px;line-height:1.32;min-height:35px}
+.inst-card .cd{font-size:11px;color:var(--tx3);margin-top:2px}
+.inst-list .row-item{cursor:pointer}
+.inst-list .row-item:hover{background:#f8fafc}
+
+/* ═══ 스테퍼 ═══ */
+.stepper{display:flex;align-items:center;margin:10px 0 4px}
+.step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+.step .sc{width:26px;height:26px;border-radius:50%;background:#e2e8f0;color:var(--tx3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;z-index:1}
+.step .sl{font-size:10.5px;color:var(--tx3);margin-top:4px;font-weight:600}
+.step:not(:first-child)::before{content:'';position:absolute;top:13px;left:calc(-50% + 13px);right:calc(50% + 13px);height:2.5px;background:#e2e8f0}
+.step.done .sc{background:var(--ok);color:#fff}
+.step.done .sl{color:var(--ok)}
+.step.done:not(:first-child)::before{background:var(--ok)}
+.step.cur .sc{background:var(--navy);color:#fff;box-shadow:0 0 0 4px rgba(30,58,95,.15)}
+.step.cur .sl{color:var(--navy)}
+.step.cur:not(:first-child)::before{background:var(--ok)}
+.step.rej .sc{background:var(--bad);color:#fff}
+.step.rej .sl{color:var(--bad)}
+
+/* ═══ 캘린더 ═══ */
+.cal-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.cal-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#f8fafc;border-bottom:1px solid var(--line)}
+.cal-head b{font-size:14px;color:var(--navy)}
+.cal-head button{font-size:15px;color:var(--tx2);padding:2px 10px;border-radius:6px}
+.cal-head button:hover{background:#eef2f7}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-grid .dow{text-align:center;font-size:10.5px;font-weight:700;color:var(--tx3);padding:6px 0;border-bottom:1px solid #f1f5f9}
+.cal-grid .dow:first-child{color:var(--bad)}
+.cal-cell{min-height:38px;text-align:center;padding:4px 1px;font-size:12px;position:relative;border-bottom:1px solid #f8fafc}
+.cal-cell.dim{color:#d5dce6}
+.cal-cell.today .dn{background:var(--navy);color:#fff;border-radius:50%;width:22px;height:22px;line-height:22px;display:inline-block}
+.cal-cell .dn{display:inline-block;width:22px;height:22px;line-height:22px}
+.cal-cell.mk-rent{background:#dbeafe}
+.cal-cell.mk-late{background:#fee2e2}
+.cal-cell.mk-wait{background:#fef3c7}
+.cal-cell .cnt-dot{display:block;font-size:9px;font-weight:800;color:#fff;background:var(--warn);border-radius:8px;padding:0 4px;margin:1px auto 0;width:fit-content}
+.cal-legend{display:flex;gap:12px;padding:8px 12px;font-size:11px;color:var(--tx2);border-top:1px solid #f1f5f9;flex-wrap:wrap}
+.cal-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+
+/* ═══ 모달 ═══ */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100;align-items:flex-end;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;padding:20px 18px 34px;-webkit-overflow-scrolling:touch}
+@media(min-width:640px){.modal-bg{align-items:center;padding:20px}.modal{border-radius:18px;padding-bottom:22px}}
+.modal h3{color:var(--navy);font-size:17px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.modal h3 .x{font-size:22px;color:var(--tx3);padding:0 4px;flex:none}
+.m-photo{width:100%;max-height:250px;object-fit:contain;background:#f8fafc;border-radius:12px;border:1px solid var(--line)}
+.info-tb{width:100%;border-collapse:collapse;font-size:13.5px;margin:12px 0}
+.info-tb td{border:1px solid var(--line);padding:7px 10px}
+.info-tb td:first-child{background:#f8fafc;font-weight:600;color:var(--tx2);width:96px;white-space:nowrap}
+.m-sec{font-size:13.5px;font-weight:800;color:var(--navy);margin:16px 0 8px}
+
+/* ═══ 조직도 / 알림 ═══ */
+.org-dept{border:1px solid var(--line);border-radius:11px;margin-bottom:8px;overflow:hidden}
+.org-dept>button{width:100%;text-align:left;padding:11px 13px;font-weight:700;font-size:14px;background:#f8fafc;display:flex;justify-content:space-between}
+.org-members{display:none;padding:6px 13px 10px}
+.org-dept.open .org-members{display:block}
+.org-members label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--tx);margin:0;padding:8px 0;border-bottom:1px solid #f1f5f9}
+.org-members input[type=checkbox]{width:18px;height:18px;flex:none}
+.mgr-tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.mgr-tag{background:#e0e7ff;color:#3730a3;border-radius:20px;padding:4px 12px;font-size:13px;font-weight:600}
+.bell{position:relative;font-size:19px;padding:4px 6px;color:#fff}
+.bell .badge{position:absolute;top:-2px;right:-2px;background:var(--bad);color:#fff;font-size:10px;font-weight:700;border-radius:9px;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+#notiPanel{display:none;position:fixed;top:54px;right:10px;width:min(370px,94vw);max-height:70vh;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.22);z-index:200}
+@media(min-width:900px){#notiPanel{top:auto;bottom:16px;left:calc(var(--sb) + 10px);right:auto}}
+#notiPanel.on{display:block}
+#notiPanel .nh{padding:12px 14px;font-weight:700;color:var(--navy);border-bottom:1px solid var(--line);font-size:14px}
+.noti-item{padding:11px 14px;border-bottom:1px solid #f1f5f9;font-size:13px}
+.noti-item .tm{font-size:11px;color:var(--tx3);margin-top:3px}
+
+/* 더보기 시트 (모바일) */
+#moreSheet .modal{max-width:420px}
+.more-item{display:flex;align-items:center;gap:12px;width:100%;padding:14px 8px;font-size:15px;font-weight:600;border-bottom:1px solid #f1f5f9;text-align:left}
+.more-item .em{font-size:20px;width:28px;text-align:center}
+
+.toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;border-radius:10px;padding:11px 20px;font-size:13.5px;z-index:300;display:none;max-width:90vw;text-align:center}
+@media(min-width:900px){.toast{bottom:26px}}
+.spin{display:inline-block;width:15px;height:15px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loading{position:fixed;inset:0;background:rgba(255,255,255,.7);z-index:400;display:none;align-items:center;justify-content:center;font-weight:700;color:var(--navy)}
+</style>
+</head>
+<body>
+
+<!-- ═══════ 로그인 ═══════ -->
+<div id="loginView">
+  <div class="login-box">
+    <div class="login-logo">📐</div>
+    <h1>ETS 계측기 관리시스템</h1>
+    <p class="sub">검교정 · 대여 통합 관리 플랫폼</p>
+    <label>이름</label>
+    <input id="loginName" placeholder="예: 홍길동" autocomplete="off">
+    <label>휴대폰 번호 뒷 4자리</label>
+    <input id="loginPhone" placeholder="예: 1234" maxlength="4" inputmode="numeric">
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ═══════ 앱 ═══════ -->
+<div id="appView">
+
+  <!-- PC 사이드바 -->
+  <aside id="sidebar">
+    <div class="sb-logo"><div class="ic">📐</div><div class="tt">ETS 계측기<small>검교정 · 대여 관리</small></div></div>
+    <div class="sb-nav" id="sbNav">
+      <button data-p="pHome" class="on" onclick="go('pHome')"><span class="em">🏠</span>홈</button>
+      <button data-p="pInst" onclick="go('pInst')"><span class="em">📐</span>계측기 · 대여신청</button>
+      <button data-p="pCart" onclick="go('pCart')"><span class="em">🗂</span>대여 신청함 <span class="cbadge cartN" style="display:none">0</span></button>
+      <button data-p="pDash" onclick="go('pDash')"><span class="em">📤</span>대여 현황</button>
+      <button data-p="pMine" onclick="go('pMine')"><span class="em">🙋</span>내 대여</button>
+      <div id="sbMgrSec" style="display:none">
+        <div class="sb-cap">담당자 메뉴</div>
+        <button data-p="pCal" onclick="go('pCal')"><span class="em">🔬</span>검교정 관리</button>
+        <button data-p="pPrint" onclick="go('pPrint')"><span class="em">🖨</span>PDF 출력</button>
+      </div>
+      <div id="sbAdmSec" style="display:none">
+        <div class="sb-cap">관리자 메뉴</div>
+        <button data-p="pAdmin" onclick="go('pAdmin')"><span class="em">⚙️</span>시스템 관리</button>
+      </div>
+    </div>
+    <div style="padding:4px 8px"><button class="bell" id="bellBtnPc" style="display:none;color:#a9bdd4" onclick="toggleNoti()">🔔 <span style="font-size:12.5px;font-weight:600">알림</span><span class="badge nb" style="display:none">0</span></button></div>
+    <div class="sb-user"><div class="nm" id="sbName"></div><div class="dp" id="sbDept"></div><button onclick="logout()">로그아웃 →</button></div>
+  </aside>
+
+  <!-- 모바일 상단바 -->
+  <div id="topbar"><span style="font-size:18px">📐</span><span class="tt">ETS 계측기 관리</span>
+    <button class="bell" id="bellBtnMo" style="display:none" onclick="toggleNoti()">🔔<span class="badge nb" style="display:none">0</span></button>
+  </div>
+
+  <div id="notiPanel"><div class="nh">🔔 알림 센터</div><div id="notiList"></div></div>
+
+  <div id="content">
+
+    <!-- ══ 홈 ══ -->
+    <div class="page on" id="pHome">
+      <div id="homeShop" style="display:none"></div>
+      <div id="homeAdmin">
+      <div class="pg-head"><h2 id="homeGreet">안녕하세요 👋</h2><span class="dt" id="homeDate"></span></div>
+      <div class="stat-grid" id="homeStats"></div>
+      <div class="grid2">
+        <div class="card"><div class="sec-title">⏰ 반납 임박 · 지연 <button class="more" onclick="go('pDash')">전체보기 →</button></div><div id="homeDue"></div></div>
+        <div class="card" id="homeCalCard" style="display:none"><div class="sec-title">🔬 검교정 임박 <button class="more" onclick="go('pCal')">전체보기 →</button></div><div id="homeCal"></div></div>
+        <div class="card"><div class="sec-title">🕐 최근 활동</div><div id="homeFeed"></div></div>
+        <div class="card"><div class="sec-title">📊 월별 대여 추이</div><div class="bar-chart" id="homeChart"></div></div>
+        <div class="card"><div class="sec-title">📦 카테고리별 보유 현황</div><div id="homeCats"></div></div>
+      </div>
+      </div><!-- /homeAdmin -->
+    </div>
+
+    <!-- ══ 계측기 ══ -->
+    <div class="page" id="pInst">
+      <div class="pg-head"><h2>계측기 · 대여신청</h2></div>
+      <div class="tools">
+        <input id="instSearch" placeholder="🔍 계측기명 · 관리번호 · 규격 검색" oninput="renderInst()">
+        <select id="instSort" onchange="renderInst()">
+          <option value="code">관리번호순</option>
+          <option value="name">이름순</option>
+          <option value="cal" id="sortCalOpt">검교정 임박순</option>
+        </select>
+        <div class="vtoggle"><button id="vGrid" class="on" onclick="setView('grid')">▦</button><button id="vList" onclick="setView('list')">☰</button></div>
+      </div>
+      <div class="filter-chips" id="stFilter">
+        <button class="on" data-f="all" onclick="setSt('all',this)">전체</button>
+        <button data-f="ok" onclick="setSt('ok',this)">대여가능</button>
+        <button data-f="busy" onclick="setSt('busy',this)">대여중·대기</button>
+        <button data-f="ban" onclick="setSt('ban',this)">대여금지</button>
+      </div>
+      <div class="filter-chips" id="catFilter"></div>
+      <div id="instArea"></div>
+    </div>
+
+    <!-- ══ 신청함 ══ -->
+    <div class="page" id="pCart">
+      <div class="pg-head"><h2>🗂 대여 신청함</h2></div>
+      <div class="card"><div id="cartList"></div></div>
+      <div class="card" id="cartFormCard">
+        <div class="sec-title">📋 일괄 신청 정보</div>
+        <div style="display:flex;gap:8px"><div style="flex:1"><label>대여 시작일</label><input type="date" id="cartStart" onchange="cartDays()"></div>
+        <div style="flex:1"><label>반납 예정일</label><input type="date" id="cartDue" onchange="cartDays()"></div></div>
+        <div id="cartDaysTx" style="font-size:12.5px;color:var(--accent);font-weight:700;margin-top:6px"></div>
+        <label>대여 사유 (전체 품목 공통)</label><textarea id="cartReason" rows="2" placeholder="예: OO프로젝트 설비 검사"></textarea>
+        <button class="btn-primary" id="cartSubmitBtn" onclick="submitCart()">일괄 대여 신청</button>
+        <div style="font-size:12px;color:var(--tx2);margin-top:8px">품목별로 각각 신청이 접수되며, 담당자 승인 후 품질팀에서 일괄 수령하시면 됩니다.</div>
+      </div>
+    </div>
+
+    <!-- ══ 대여 현황 ══ -->
+    <div class="page" id="pDash">
+      <div class="pg-head"><h2>대여 현황</h2></div>
+      <div class="stat-grid" id="dashStats"></div>
+      <div class="card"><div class="sec-title">🕐 승인 대기 <span class="cnt" id="cntReq">0</span></div><div id="listReq"></div></div>
+      <div class="card"><div class="sec-title">📦 수령 대기 (승인됨) <span class="cnt" id="cntAppr">0</span></div><div id="listAppr"></div></div>
+      <div class="card"><div class="sec-title">📤 대여중 <span class="cnt" id="cntRent">0</span></div><div id="listRent"></div></div>
+      <div class="card"><div class="sec-title">✅ 최근 반납</div><div id="listRet"></div></div>
+    </div>
+
+    <!-- ══ 내 대여 ══ -->
+    <div class="page" id="pMine">
+      <div class="pg-head"><h2>내 대여</h2></div>
+      <div id="listMine"></div>
+    </div>
+
+    <!-- ══ 검교정 ══ -->
+    <div class="page" id="pCal">
+      <div class="pg-head"><h2>검교정 관리</h2></div>
+      <div class="stat-grid" id="calStats"></div>
+      <div class="grid2">
+        <div class="card">
+          <div class="sec-title">📅 월별 검교정 계획</div>
+          <div class="cal-wrap">
+            <div class="cal-head"><button onclick="calNav(-1,'calCal')">‹</button><b id="calCalTitle"></b><button onclick="calNav(1,'calCal')">›</button></div>
+            <div class="cal-grid" id="calCalGrid"></div>
+            <div class="cal-legend"><span><i style="background:var(--warn)"></i>검교정 계획 (숫자 = 대수)</span></div>
+          </div>
+          <div id="calMonthList" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <div class="sec-title">🔬 검교정 현황 <span class="cnt" id="cntCal">0</span></div>
+          <div style="font-size:12px;color:var(--tx2);margin-bottom:10px">계획일 임박 순 · 알림: D-60 / 30 / 14 / 7 (앱 + 다우 메일)</div>
+          <div id="listCal"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 출력 ══ -->
+    <div class="page" id="pPrint">
+      <div class="pg-head"><h2>PDF 출력</h2></div>
+      <div class="grid2">
+        <div class="card">
+          <div class="sec-title">🖨 대여현황 (대여대장)</div>
+          <label>시작일</label><input type="date" id="prFrom">
+          <label>종료일</label><input type="date" id="prTo">
+          <button class="btn-primary" onclick="printRent()">대여대장 출력</button>
+          <div style="font-size:12px;color:var(--tx2);margin-top:8px">기간 내 대여일 기준 · 인쇄 창에서 [PDF로 저장]</div>
+        </div>
+        <div class="card">
+          <div class="sec-title">🖨 검교정현황</div>
+          <label>계획일 시작</label><input type="date" id="pcFrom">
+          <label>계획일 종료</label><input type="date" id="pcTo">
+          <button class="btn-primary" onclick="printCal()">검교정현황 출력</button>
+          <div style="font-size:12px;color:var(--tx2);margin-top:8px">기간 미입력 시 전체 출력 · 검교정 계획일 기준</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 관리 ══ -->
+    <div class="page" id="pAdmin">
+      <div class="pg-head"><h2>시스템 관리</h2></div>
+      <div class="card">
+        <div class="sec-title">👥 검교정·대여 담당자 지정</div>
+        <div class="mgr-tags" id="mgrTags"></div>
+        <button class="btn b-navy" onclick="openOrg()">조직도에서 담당자 선택</button>
+        <div style="font-size:12px;color:var(--tx2);margin-top:8px">지정된 담당자에게 검교정 알림 및 대여 신청 알림이 발송됩니다.</div>
+      </div>
+      <div class="card">
+        <div class="sec-title">⚙️ 계측기 등록 · 수정</div>
+        <button class="btn b-navy" onclick="openInstEdit(null)">+ 신규 계측기 등록</button>
+        <div style="font-size:12px;color:var(--tx2);margin-top:8px">수정/삭제는 계측기 목록에서 계측기를 선택해 상세 화면 하단의 [수정]/[삭제] 버튼을 사용하세요.<br>신규 계측기의 사진은 GitHub 저장소 img 폴더에 <b>관리번호.jpg</b> 로 업로드하면 자동 연결됩니다.</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- 모바일 하단탭 -->
+  <nav id="bottomNav">
+    <button data-p="pHome" class="on" onclick="go('pHome')"><span class="em">🏠</span>홈</button>
+    <button data-p="pInst" onclick="go('pInst')"><span class="em">📐</span>계측기</button>
+    <button data-p="pCart" id="btnCartNav" onclick="go('pCart')"><span class="em">🗂</span>신청함 <span class="cbadge cartN" style="display:none;position:absolute;transform:translate(10px,-26px)">0</span></button>
+    <button data-p="pDash" id="btnDashNav" onclick="go('pDash')"><span class="em">📤</span>대여현황</button>
+    <button data-p="pMine" onclick="go('pMine')"><span class="em">🙋</span>내 대여</button>
+    <button id="btnMore" style="display:none" onclick="openM('moreSheet')"><span class="em">☰</span>더보기</button>
+  </nav>
+</div>
+
+<!-- ═══════ 더보기 시트 ═══════ -->
+<div class="modal-bg" id="moreSheet"><div class="modal">
+  <h3>메뉴<button class="x" onclick="closeM('moreSheet')">✕</button></h3>
+  <button class="more-item" onclick="closeM('moreSheet');go('pCart')"><span class="em">🗂</span>대여 신청함 <span class="cbadge cartN" style="display:none">0</span></button>
+  <button class="more-item" id="moreCal" onclick="closeM('moreSheet');go('pCal')"><span class="em">🔬</span>검교정 관리</button>
+  <button class="more-item" id="morePrint" onclick="closeM('moreSheet');go('pPrint')"><span class="em">🖨</span>PDF 출력</button>
+  <button class="more-item" id="moreAdmin" style="display:none" onclick="closeM('moreSheet');go('pAdmin')"><span class="em">⚙️</span>시스템 관리</button>
+  <button class="more-item" onclick="logout()"><span class="em">🚪</span>로그아웃</button>
+</div></div>
+
+<!-- ═══════ 계측기 상세 ═══════ -->
+<div class="modal-bg" id="mDetail"><div class="modal">
+  <h3><span id="mdTitle"></span><button class="x" onclick="closeM('mDetail')">✕</button></h3>
+  <img class="m-photo" id="mdPhoto" alt="">
+  <table class="info-tb" id="mdInfo"></table>
+  <div class="m-sec">📅 대여 일정</div>
+  <div class="cal-wrap">
+    <div class="cal-head"><button onclick="calNav(-1,'mdCal')">‹</button><b id="mdCalTitle"></b><button onclick="calNav(1,'mdCal')">›</button></div>
+    <div class="cal-grid" id="mdCalGrid"></div>
+    <div class="cal-legend"><span><i style="background:#dbeafe"></i>대여중·예정</span><span><i style="background:#fee2e2"></i>반납지연</span><span><i style="background:#fef3c7"></i>승인대기</span></div>
+  </div>
+  <div id="mdRentForm"></div>
+  <div id="mdHistory"></div>
+  <div id="mdAdminBtns" style="margin-top:14px"></div>
+</div></div>
+
+<!-- ═══════ 계측기 편집 (관리자) ═══════ -->
+<div class="modal-bg" id="mEdit"><div class="modal">
+  <h3><span id="meTitle">계측기 등록</span><button class="x" onclick="closeM('mEdit')">✕</button></h3>
+  <label>관리번호 *</label><input id="meCode" placeholder="예: Z1162-2601">
+  <label>계측기명 *</label><input id="meName">
+  <label>규격 (분해능)</label><input id="meSpec">
+  <label>S/N</label><input id="meSn">
+  <label>제조사</label><input id="meMaker">
+  <label>점검 주기 (개월)</label><input id="meCycle" type="number" value="12">
+  <label>검교정 시행일자</label><input id="meCalDone" type="date">
+  <label>검교정 시행계획</label><input id="meCalPlan" type="date">
+  <label>사용부서</label><input id="meDept" value="품질팀">
+  <label style="display:flex;align-items:center;gap:8px;margin-top:14px"><input type="checkbox" id="meNoRent" style="width:18px;height:18px"> 대여 금지 (품질팀 검수 전용)</label>
+  <label>비고</label><input id="meNote">
+  <button class="btn-primary" onclick="saveInst()">저장</button>
+</div></div>
+
+<!-- ═══════ 조직도 ═══════ -->
+<div class="modal-bg" id="mOrg"><div class="modal">
+  <h3>담당자 선택<button class="x" onclick="closeM('mOrg')">✕</button></h3>
+  <div style="font-size:12.5px;color:var(--tx2);margin-bottom:10px">부서를 눌러 펼치고, 담당자로 지정할 인원을 체크하세요. (복수 지정 가능)</div>
+  <div id="orgTree"><div class="empty"><span class="spin" style="border-color:#cbd5e1;border-top-color:var(--navy)"></span> 조직도 불러오는 중...</div></div>
+  <button class="btn-primary" onclick="saveManagers()">담당자 저장</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<div id="loading"><span class="spin" style="border-color:#cbd5e1;border-top-color:var(--navy);margin-right:8px"></span> 처리 중...</div>
+
+<script>
+/* ═══════════════ 설정 ═══════════════ */
+var API_URL = 'https://script.google.com/macros/s/AKfycbycx1q-YUaStNzUuHCqWl_JlxSIFGKrU5GB2fAYe9jRML4k8201zRcNMSNpet4WBxiqPA/exec';
+var IMG_BASE = 'img/';
+var EMB = {};   // 내장 이미지 (미리보기용)
+
+var USER = null;
+var DATA = { instruments:[], rentals:[], managers:[], admins:[], notifications:[] };
+var STF = 'all', CATF = 'all', VIEW = 'grid';
+var CAL_CURSOR = {};   // 캘린더 표시 월 { key: Date }
+var MD_CODE = null;    // 상세 모달에 열린 계측기
+
+/* ═══════════════ API ═══════════════ */
+function api(params) {
+  return fetch(API_URL, {
+    method:'POST', headers:{'Content-Type':'text/plain;charset=UTF-8'},
+    body: JSON.stringify(params)
+  }).then(function(r){ return r.json(); });
+}
+function loadingOn(v){ document.getElementById('loading').style.display = v?'flex':'none'; }
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._tm); t._tm = setTimeout(function(){ t.style.display='none'; }, 2600);
+}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function imgSrc(code){ return EMB[code] || (IMG_BASE + encodeURIComponent(code) + '.jpg'); }
+
+/* ═══════════════ 로그인 ═══════════════ */
+function doLogin() {
+  var name = document.getElementById('loginName').value.trim();
+  var phone = document.getElementById('loginPhone').value.trim();
+  var err = document.getElementById('loginErr');
+  if (!name || !phone) { err.textContent = '이름과 휴대폰 뒷자리를 입력하세요.'; return; }
+  var btn = document.getElementById('loginBtn');
+  btn.innerHTML = '<span class="spin"></span> 확인 중...'; btn.disabled = true;
+  api({ action:'login', name:name, phone4:phone }).then(function(r){
+    btn.textContent = '로그인'; btn.disabled = false;
+    if (!r.ok) { err.textContent = r.message || '로그인에 실패했습니다.'; return; }
+    USER = { name:r.name, rank:r.rank, dept:r.dept, empNo:r.empNo, role:r.role };
+    localStorage.setItem('ETS_INST_USER', JSON.stringify(USER));
+    enterApp();
+  }).catch(function(){
+    btn.textContent = '로그인'; btn.disabled = false;
+    err.textContent = '서버 연결에 실패했습니다. 잠시 후 다시 시도하세요.';
+  });
+}
+function logout() { localStorage.removeItem('ETS_INST_USER'); location.reload(); }
+
+function enterApp() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('appView').style.display = 'block';
+  var roleLbl = USER.role==='admin' ? ' · 관리자' : (USER.role==='manager' ? ' · 담당자' : '');
+  document.getElementById('sbName').textContent = USER.name + ' ' + USER.rank;
+  document.getElementById('sbDept').textContent = USER.dept + roleLbl;
+  var isMgr = USER.role === 'admin' || USER.role === 'manager';
+  document.getElementById('sbMgrSec').style.display = isMgr ? '' : 'none';
+  document.getElementById('sbAdmSec').style.display = USER.role==='admin' ? '' : 'none';
+  document.getElementById('btnMore').style.display = isMgr ? '' : 'none';
+  document.getElementById('moreAdmin').style.display = USER.role==='admin' ? '' : 'none';
+  document.getElementById('bellBtnPc').style.display = isMgr ? '' : 'none';
+  document.getElementById('bellBtnMo').style.display = isMgr ? '' : 'none';
+  // 모바일 하단탭: 유저=홈/계측기/신청함/대여현황/내대여, 담당자·관리자=홈/계측기/대여현황/내대여/더보기(신청함 포함)
+  document.getElementById('btnCartNav').style.display = isMgr ? 'none' : '';
+  // 일반 유저에게 검교정 관련 요소 숨김
+  var opt = document.getElementById('sortCalOpt');
+  if (opt) opt.style.display = isMgr ? '' : 'none';
+  renderCartBadge();
+  refresh();
+}
+function refresh() {
+  loadingOn(true);
+  return api({ action:'getData' }).then(function(r){
+    loadingOn(false);
+    if (!r.ok) { toast('데이터 로드 실패'); return; }
+    DATA = r;
+    renderAll();
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+function renderAll() {
+  renderHome(); renderCats(); renderInst(); renderDash(); renderMine();
+  var isMgr = USER.role !== 'user';
+  if (isMgr) { renderCal(); renderNoti(); }
+  if (USER.role === 'admin') renderMgrTags();
+  if (MD_CODE) refreshDetailCal();
+}
+
+/* ═══════════════ 공통 계산 ═══════════════ */
+function activeRental(code) {
+  for (var i = 0; i < DATA.rentals.length; i++) {
+    var r = DATA.rentals[i];
+    if (r.code === code && ['REQUESTED','APPROVED','RENTED'].indexOf(r.status) >= 0) return r;
+  }
+  return null;
+}
+function instState(it) {
+  if (it.noRent) return { key:'ban', label:'대여 금지', cls:'c-ban' };
+  var r = activeRental(it.code);
+  if (!r) return { key:'ok', label:'대여 가능', cls:'c-ok' };
+  if (r.status === 'REQUESTED') return { key:'busy', label:'승인 대기', cls:'c-wait', rent:r };
+  if (r.status === 'APPROVED') return { key:'busy', label:'수령 대기', cls:'c-appr', rent:r };
+  var over = ddayNum(r.dueDate) < 0;
+  return { key:'busy', label: over?'반납 지연':'대여중', cls: over?'c-late':'c-rent', rent:r };
+}
+function catOf(name) {
+  var n = String(name||'').toLowerCase();
+  if (n.indexOf('캘리퍼스') >= 0) return '캘리퍼스';
+  if (n.indexOf('마이크로미터') >= 0) return '마이크로미터';
+  if (n.indexOf('인디게이터') >= 0 || n.indexOf('인디케이터') >= 0) return '인디게이터';
+  if (n.indexOf('게이지') >= 0 || n.indexOf('gauge') >= 0) return '게이지';
+  if (n.indexOf('분 동') >= 0 || n.indexOf('분동') >= 0 || n.indexOf('저울') >= 0) return '저울·분동';
+  return '측정기·기타';
+}
+var CAT_LIST = ['캘리퍼스','마이크로미터','게이지','인디게이터','저울·분동','측정기·기타'];
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+}
+function ddayNum(dateStr) {
+  if (!dateStr) return 9999;
+  var t = new Date(todayStr() + 'T00:00:00');
+  var d = new Date(dateStr + 'T00:00:00');
+  return Math.round((d - t) / 86400000);
+}
+function ddayChip(n) {
+  if (n === 9999) return '<span class="dday d-grn">-</span>';
+  if (n < 0)  return '<span class="dday d-over">D+' + (-n) + '</span>';
+  if (n === 0) return '<span class="dday d-red">D-DAY</span>';
+  if (n <= 14) return '<span class="dday d-red">D-' + n + '</span>';
+  if (n <= 30) return '<span class="dday d-org">D-' + n + '</span>';
+  if (n <= 60) return '<span class="dday d-yel">D-' + n + '</span>';
+  return '<span class="dday d-grn">D-' + n + '</span>';
+}
+function thumbHtml(code) {
+  return '<img class="mini-thumb" src="' + imgSrc(code) + '" loading="lazy" onerror="this.outerHTML=\'<div class=&quot;mini-thumb noimg&quot;>📐</div>\'">';
+}
+
+/* ═══════════════ 홈 대시보드 ═══════════════ */
+function renderHome() {
+  var isUser = USER.role === 'user';
+  document.getElementById('homeShop').style.display = isUser ? '' : 'none';
+  document.getElementById('homeAdmin').style.display = isUser ? 'none' : '';
+  if (isUser) { renderShopHome(); return; }
+  var h = new Date().getHours();
+  var greet = h < 11 ? '좋은 아침입니다' : (h < 17 ? '안녕하세요' : '좋은 저녁입니다');
+  document.getElementById('homeGreet').textContent = greet + ', ' + USER.name + '님 👋';
+  var w = ['일','월','화','수','목','금','토'][new Date().getDay()];
+  document.getElementById('homeDate').textContent = todayStr() + ' (' + w + ')';
+
+  var total = DATA.instruments.length, busy = 0;
+  var ban = DATA.instruments.filter(function(i){ return i.noRent; }).length;
+  DATA.instruments.forEach(function(it){ if (instState(it).key==='busy') busy++; });
+  var rents = DATA.rentals.filter(function(r){ return r.status==='RENTED'; });
+  var reqs = DATA.rentals.filter(function(r){ return r.status==='REQUESTED'; });
+  var late = rents.filter(function(r){ return ddayNum(r.dueDate) < 0; }).length;
+  document.getElementById('homeStats').innerHTML =
+    '<div class="stat" onclick="go(\'pInst\')"><div class="n">' + total + '</div><div class="t">전체 계측기</div></div>' +
+    '<div class="stat green" onclick="go(\'pInst\')"><div class="n">' + (total-busy-ban) + '</div><div class="t">대여 가능</div></div>' +
+    '<div class="stat blue" onclick="go(\'pDash\')"><div class="n">' + rents.length + '</div><div class="t">대여중</div></div>' +
+    '<div class="stat org" onclick="go(\'pDash\')"><div class="n">' + reqs.length + '</div><div class="t">승인 대기</div></div>' +
+    '<div class="stat red" onclick="go(\'pDash\')"><div class="n">' + late + '</div><div class="t">반납 지연</div></div>';
+
+  // 반납 임박·지연 TOP5
+  var due = rents.slice().sort(function(a,b){ return ddayNum(a.dueDate) - ddayNum(b.dueDate); }).slice(0,5);
+  document.getElementById('homeDue').innerHTML = due.length ? due.map(function(r){
+    return '<div class="row-item">' + thumbHtml(r.code) +
+      '<div class="row-main"><div class="tt">' + esc(r.instName) + '</div>' +
+      '<div class="ss">' + esc(r.renterName) + ' / ' + esc(r.renterDept) + ' · 반납예정 ' + esc(r.dueDate) + '</div></div>' +
+      ddayChip(ddayNum(r.dueDate)) + '</div>';
+  }).join('') : '<div class="empty">대여중인 계측기가 없습니다.</div>';
+
+  // 검교정 임박 TOP5 (담당자·관리자)
+  var isMgr = USER.role !== 'user';
+  document.getElementById('homeCalCard').style.display = isMgr ? '' : 'none';
+  if (isMgr) {
+    var cal = DATA.instruments.slice().sort(function(a,b){
+      return (a.calPlan||'9999').localeCompare(b.calPlan||'9999');
+    }).slice(0,5);
+    document.getElementById('homeCal').innerHTML = cal.map(function(it){
+      return '<div class="row-item">' + thumbHtml(it.code) +
+        '<div class="row-main"><div class="tt">' + esc(it.name) + ' <span class="cd">' + esc(it.code) + '</span></div>' +
+        '<div class="ss">계획일 ' + esc(it.calPlan||'-') + ' · 주기 ' + it.cycle + '개월</div></div>' +
+        ddayChip(ddayNum(it.calPlan)) + '</div>';
+    }).join('');
+  }
+
+  // 최근 활동 피드
+  var evts = [];
+  DATA.rentals.forEach(function(r){
+    if (r.requestedAt) evts.push({ t:r.requestedAt, ic:'📝', cls:'f-req', m:esc(r.renterName) + '님이 <b>' + esc(r.instName) + '</b> 대여를 신청했습니다.' });
+    if (r.approvedAt) evts.push({ t:r.approvedAt, ic:'✅', cls:'f-ok', m:'<b>' + esc(r.instName) + '</b> 대여가 승인되었습니다.' });
+    if (r.rentedAt) evts.push({ t:r.rentedAt, ic:'📤', cls:'f-rent', m:esc(r.renterName) + '님이 <b>' + esc(r.instName) + '</b>을(를) 수령했습니다.' });
+    if (r.returnedAt) evts.push({ t:r.returnedAt, ic:'📥', cls:'f-ret', m:'<b>' + esc(r.instName) + '</b>이(가) 반납되었습니다.' });
+    if (r.status === 'REJECTED') evts.push({ t:r.requestedAt, ic:'❌', cls:'f-late', m:'<b>' + esc(r.instName) + '</b> 대여 신청이 반려되었습니다.' });
+  });
+  evts.sort(function(a,b){ return (b.t||'').localeCompare(a.t||''); });
+  document.getElementById('homeFeed').innerHTML = evts.length ? evts.slice(0,7).map(function(e){
+    return '<div class="feed-item"><div class="fi ' + e.cls + '">' + e.ic + '</div>' +
+      '<div class="fm">' + e.m + '<div class="ft">' + esc(e.t) + '</div></div></div>';
+  }).join('') : '<div class="empty">아직 활동 내역이 없습니다.</div>';
+
+  // 월별 대여 추이 (최근 6개월, 대여시작 기준)
+  var months = [], counts = [];
+  var now = new Date();
+  for (var i = 5; i >= 0; i--) {
+    var d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    var key = d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2);
+    months.push({ key:key, label:(d.getMonth()+1) + '월' });
+  }
+  months.forEach(function(m){
+    counts.push(DATA.rentals.filter(function(r){
+      return r.status !== 'REJECTED' && (r.startDate||'').indexOf(m.key) === 0;
+    }).length);
+  });
+  var max = Math.max.apply(null, counts.concat([1]));
+  document.getElementById('homeChart').innerHTML = months.map(function(m,i){
+    var hpx = Math.round(counts[i] / max * 78);
+    return '<div class="bar-col"><span class="bv">' + counts[i] + '</span>' +
+      '<div class="bb" style="height:' + Math.max(hpx,3) + 'px"></div><span class="bl">' + m.label + '</span></div>';
+  }).join('');
+
+  // 카테고리별 보유
+  var byCat = {};
+  CAT_LIST.forEach(function(c){ byCat[c] = { total:0, rent:0 }; });
+  DATA.instruments.forEach(function(it){
+    var c = catOf(it.name);
+    byCat[c].total++;
+    var st = instState(it);
+    if (st.rent && st.rent.status === 'RENTED') byCat[c].rent++;
+  });
+  var maxCat = Math.max.apply(null, CAT_LIST.map(function(c){ return byCat[c].total; }).concat([1]));
+  document.getElementById('homeCats').innerHTML = CAT_LIST.filter(function(c){ return byCat[c].total; }).map(function(c){
+    var b = byCat[c];
+    return '<div class="hbar"><div class="hl"><b>' + c + '</b><span>' + b.total + '대' + (b.rent? ' · 대여중 ' + b.rent : '') + '</span></div>' +
+      '<div class="ht"><div class="hf" style="width:' + Math.round(b.total/maxCat*100) + '%"></div></div></div>';
+  }).join('');
+}
+
+/* ═══════════════ 쇼핑 홈 (일반 유저) ═══════════════ */
+var CAT_ICON = { '캘리퍼스':'📏', '마이크로미터':'🔩', '게이지':'⏱', '인디게이터':'🎯', '저울·분동':'⚖️', '측정기·기타':'📟' };
+function renderShopHome() {
+  var counts = {}, avail = {};
+  DATA.instruments.forEach(function(it){
+    var c = catOf(it.name);
+    counts[c] = (counts[c]||0)+1;
+    if (instState(it).key === 'ok') avail[c] = (avail[c]||0)+1;
+  });
+  var h = new Date().getHours();
+  var greet = h < 11 ? '좋은 아침입니다' : (h < 17 ? '안녕하세요' : '좋은 저녁입니다');
+
+  // 대여 가능 품목
+  var okList = DATA.instruments.filter(function(it){ return instState(it).key === 'ok'; });
+
+  // 인기 계측기 (대여 신청 횟수)
+  var pop = {};
+  DATA.rentals.forEach(function(r){ if (r.status !== 'REJECTED') pop[r.code] = (pop[r.code]||0)+1; });
+  var rank = DATA.instruments.filter(function(it){ return pop[it.code]; })
+    .sort(function(a,b){ return pop[b.code] - pop[a.code]; }).slice(0,5);
+
+  var html =
+    '<div class="shop-hero"><h2>' + greet + ', ' + esc(USER.name) + '님 👋</h2>' +
+    '<p>필요한 계측기를 검색하고 바로 대여 신청하세요. 승인 후 품질팀에서 수령하시면 됩니다.</p>' +
+    '<div class="shop-search"><span>🔍</span><input id="shopSearch" placeholder="계측기명 · 관리번호 검색" ' +
+    'onkeydown="if(event.key===\'Enter\')shopGo(this.value)"><button class="btn b-navy" onclick="shopGo(document.getElementById(\'shopSearch\').value)">검색</button></div></div>';
+
+  html += '<div class="cat-tiles">' + CAT_LIST.filter(function(c){ return counts[c]; }).map(function(c){
+    return '<div class="cat-tile" onclick="shopCat(\'' + c + '\')"><div class="ci">' + CAT_ICON[c] + '</div>' +
+      '<div class="cn">' + c + '</div><div class="cc">대여가능 ' + (avail[c]||0) + '/' + counts[c] + '</div></div>';
+  }).join('') + '</div>';
+
+  html += '<div class="card"><div class="sec-title">🟢 지금 대여 가능 <span class="cnt">' + okList.length + '</span>' +
+    '<button class="more" onclick="shopCat(\'all\')">전체보기 →</button></div>' +
+    '<div class="hscroll">' + okList.slice(0,10).map(function(it){ return instCardHtml(it); }).join('') + '</div></div>';
+
+  if (rank.length) {
+    html += '<div class="card"><div class="sec-title">🔥 많이 찾는 계측기</div>' + rank.map(function(it, i){
+      var st = instState(it);
+      return '<div class="row-item" style="cursor:pointer" onclick="openDetail(\'' + esc(it.code) + '\')">' +
+        '<div class="rank-num' + (i===0?' top':'') + '">' + (i+1) + '</div>' + thumbHtml(it.code) +
+        '<div class="row-main"><div class="tt">' + esc(it.name) + '</div>' +
+        '<div class="ss">' + esc(it.spec) + ' · 누적 대여 ' + pop[it.code] + '회</div></div>' +
+        '<span class="chip ' + st.cls + '">' + st.label + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  html += '<div class="card" style="text-align:center;padding:14px"><span style="font-size:13px;color:var(--tx2)">진행 중인 신청이 있나요?</span> ' +
+    '<button class="btn b-line" style="margin-left:8px" onclick="go(\'pMine\')">내 대여 확인 →</button></div>';
+
+  document.getElementById('homeShop').innerHTML = html;
+}
+function shopGo(q) {
+  go('pInst');
+  document.getElementById('instSearch').value = q || '';
+  renderInst();
+}
+function shopCat(c) {
+  CATF = c; STF = 'all';
+  go('pInst');
+  document.getElementById('instSearch').value = '';
+  document.querySelectorAll('#stFilter button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-f')==='all'); });
+  renderCats(); renderInst();
+}
+
+/* ═══════════════ 대여 신청함 ═══════════════ */
+function cartKey() { return 'ETS_INST_CART_' + (USER ? USER.name : ''); }
+function getCart() {
+  try { return JSON.parse(localStorage.getItem(cartKey())) || []; } catch(e) { return []; }
+}
+function setCart(arr) {
+  localStorage.setItem(cartKey(), JSON.stringify(arr));
+  renderCartBadge();
+  renderCart();
+}
+function addCart(code) {
+  var it = findInst(code);
+  if (!it) return;
+  if (instState(it).key !== 'ok') { toast('현재 대여 가능한 상태가 아닙니다.'); return; }
+  var cart = getCart();
+  if (cart.indexOf(code) >= 0) { toast('이미 신청함에 담긴 계측기입니다.'); return; }
+  cart.push(code);
+  setCart(cart);
+  toast('🗂 신청함에 담았습니다. (' + cart.length + '건)');
+}
+function rmCart(code) {
+  setCart(getCart().filter(function(c){ return c !== code; }));
+}
+function renderCartBadge() {
+  var n = getCart().length;
+  document.querySelectorAll('.cartN').forEach(function(b){
+    b.style.display = n ? 'inline-flex' : 'none';
+    b.textContent = n;
+  });
+}
+function renderCart() {
+  var cart = getCart();
+  var listEl = document.getElementById('cartList');
+  var formEl = document.getElementById('cartFormCard');
+  if (!cart.length) {
+    listEl.innerHTML = '<div class="empty">신청함이 비어 있습니다.<br><button class="btn b-navy" style="margin-top:10px" onclick="go(\'pInst\')">계측기 보러가기</button></div>';
+    formEl.style.display = 'none';
+    return;
+  }
+  formEl.style.display = '';
+  listEl.innerHTML = cart.map(function(code){
+    var it = findInst(code);
+    if (!it) return '';
+    var st = instState(it);
+    var bad = st.key !== 'ok';
+    return '<div class="cart-item">' + thumbHtml(code) +
+      '<div class="row-main"><div class="tt">' + esc(it.name) + ' <span class="cd">' + esc(code) + '</span></div>' +
+      '<div class="ss">' + esc(it.spec) + '</div></div>' +
+      '<span class="chip ' + st.cls + '">' + st.label + '</span>' +
+      (bad ? '<span style="font-size:11px;color:var(--bad)">신청 불가</span>' : '') +
+      '<button class="cart-x" onclick="rmCart(\'' + esc(code) + '\')">✕</button></div>';
+  }).join('');
+  if (!document.getElementById('cartStart').value) document.getElementById('cartStart').value = todayStr();
+}
+function cartDays() {
+  var s = document.getElementById('cartStart').value;
+  var e = document.getElementById('cartDue').value;
+  var el = document.getElementById('cartDaysTx');
+  if (s && e && e >= s) {
+    var n = Math.round((new Date(e+'T00:00:00') - new Date(s+'T00:00:00')) / 86400000) + 1;
+    el.textContent = '총 ' + n + '일간 대여 · ' + getCart().length + '개 품목';
+  } else el.textContent = '';
+}
+function submitCart() {
+  var cart = getCart().filter(function(code){
+    var it = findInst(code);
+    return it && instState(it).key === 'ok';
+  });
+  if (!cart.length) { toast('신청 가능한 품목이 없습니다.'); return; }
+  var start = document.getElementById('cartStart').value;
+  var due = document.getElementById('cartDue').value;
+  var reason = document.getElementById('cartReason').value.trim();
+  if (!start || !due) { toast('대여 시작일과 반납 예정일을 입력하세요.'); return; }
+  if (due < start) { toast('반납 예정일이 시작일보다 빠릅니다.'); return; }
+  if (!reason) { toast('대여 사유를 입력하세요.'); return; }
+  if (!confirm(cart.length + '개 품목을 일괄 신청할까요?')) return;
+  var btn = document.getElementById('cartSubmitBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> 신청 중...';
+  var okN = 0, failN = 0;
+  var chain = Promise.resolve();
+  cart.forEach(function(code){
+    chain = chain.then(function(){
+      return api({ action:'rentRequest', code:code, renterName:USER.name, renterDept:USER.dept,
+        renterRank:USER.rank, renterEmpNo:USER.empNo, reason:reason, startDate:start, dueDate:due
+      }).then(function(r){
+        if (r.ok) { okN++; rmCart(code); } else failN++;
+      }).catch(function(){ failN++; });
+    });
+  });
+  chain.then(function(){
+    btn.disabled = false; btn.textContent = '일괄 대여 신청';
+    toast('신청 완료 ' + okN + '건' + (failN ? ' · 실패 ' + failN + '건' : '') + ' — 담당자 승인 후 알림이 발송됩니다.');
+    document.getElementById('cartReason').value = '';
+    refresh();
+  });
+}
+
+/* ═══════════════ 계측기 목록 ═══════════════ */
+function renderCats() {
+  var counts = {};
+  DATA.instruments.forEach(function(it){ var c = catOf(it.name); counts[c] = (counts[c]||0)+1; });
+  var html = '<button class="' + (CATF==='all'?'on':'') + '" onclick="setCat(\'all\',this)">전체 종류 <span class="fc">' + DATA.instruments.length + '</span></button>';
+  CAT_LIST.forEach(function(c){
+    if (!counts[c]) return;
+    html += '<button class="' + (CATF===c?'on':'') + '" onclick="setCat(\'' + c + '\',this)">' + c + ' <span class="fc">' + counts[c] + '</span></button>';
+  });
+  document.getElementById('catFilter').innerHTML = html;
+}
+function setSt(f, btn) {
+  STF = f;
+  document.querySelectorAll('#stFilter button').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  renderInst();
+}
+function setCat(c, btn) {
+  CATF = c;
+  document.querySelectorAll('#catFilter button').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  renderInst();
+}
+function setView(v) {
+  VIEW = v;
+  document.getElementById('vGrid').classList.toggle('on', v==='grid');
+  document.getElementById('vList').classList.toggle('on', v==='list');
+  renderInst();
+}
+function renderInst() {
+  var q = (document.getElementById('instSearch').value || '').toLowerCase();
+  var sort = document.getElementById('instSort').value;
+  var list = DATA.instruments.filter(function(it){
+    var st = instState(it);
+    if (STF !== 'all' && st.key !== STF) return false;
+    if (CATF !== 'all' && catOf(it.name) !== CATF) return false;
+    if (q && (it.name + it.code + it.spec).toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+  if (sort === 'name') list.sort(function(a,b){ return a.name.localeCompare(b.name) || a.code.localeCompare(b.code); });
+  else if (sort === 'cal') list.sort(function(a,b){ return (a.calPlan||'9999').localeCompare(b.calPlan||'9999'); });
+  else list.sort(function(a,b){ return a.code.localeCompare(b.code); });
+
+  var area = document.getElementById('instArea');
+  if (!list.length) { area.innerHTML = '<div class="empty">조건에 맞는 계측기가 없습니다.</div>'; return; }
+
+  if (VIEW === 'grid') {
+    area.innerHTML = '<div class="inst-grid">' + list.map(function(it){ return instCardHtml(it); }).join('') + '</div>';
+  } else {
+    area.innerHTML = '<div class="card inst-list">' + list.map(function(it){
+      var st = instState(it);
+      return '<div class="row-item" onclick="openDetail(\'' + esc(it.code) + '\')">' + thumbHtml(it.code) +
+        '<div class="row-main"><div class="tt">' + esc(it.name) + ' <span class="cd">' + esc(it.code) + '</span></div>' +
+        '<div class="ss">' + esc(it.spec) + ' · ' + esc(it.maker) + '</div></div>' +
+        '<span class="chip ' + st.cls + '">' + st.label + '</span></div>';
+    }).join('') + '</div>';
+  }
+}
+
+function instCardHtml(it) {
+  var st = instState(it);
+  var act = st.key === 'ok'
+    ? '<button class="card-act" onclick="event.stopPropagation();addCart(\'' + esc(it.code) + '\')">🗂 신청함에 담기</button>'
+    : '<button class="card-act dis" onclick="event.stopPropagation()">' + st.label + '</button>';
+  return '<div class="inst-card" onclick="openDetail(\'' + esc(it.code) + '\')">' +
+    '<span class="st-abs chip ' + st.cls + '">' + st.label + '</span>' +
+    '<div class="ph"><img src="' + imgSrc(it.code) + '" loading="lazy" onerror="this.outerHTML=\'<div class=noimg>📐</div>\'"></div>' +
+    '<div class="bd"><div class="nm">' + esc(it.name) + '</div>' +
+    '<div class="cd">' + esc(it.code) + ' · ' + esc(it.spec) + '</div></div>' + act + '</div>';
+}
+
+/* ═══════════════ 캘린더 공통 ═══════════════
+   marks: { 'YYYY-MM-DD': 'rent'|'late'|'wait' }  또는 { date: 숫자 } (count 모드) */
+function renderMonthCal(key, gridId, titleId, marks, countMode) {
+  var cur = CAL_CURSOR[key] || new Date();
+  CAL_CURSOR[key] = cur;
+  var y = cur.getFullYear(), m = cur.getMonth();
+  document.getElementById(titleId).textContent = y + '년 ' + (m+1) + '월';
+  var first = new Date(y, m, 1);
+  var startDow = first.getDay();
+  var days = new Date(y, m+1, 0).getDate();
+  var prevDays = new Date(y, m, 0).getDate();
+  var tStr = todayStr();
+  var html = ['일','월','화','수','목','금','토'].map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('');
+  var cells = [];
+  for (var i = startDow-1; i >= 0; i--) cells.push({ d:prevDays-i, dim:true });
+  for (var d = 1; d <= days; d++) cells.push({ d:d, dim:false });
+  while (cells.length % 7) cells.push({ d:cells.length, dim:true, next:true });
+  var nd = 1;
+  cells.forEach(function(c, idx){
+    if (c.dim && c.next) { c.d = nd++; }
+    var cls = 'cal-cell' + (c.dim ? ' dim' : '');
+    var inner = '<span class="dn">' + c.d + '</span>';
+    if (!c.dim) {
+      var ds = y + '-' + ('0'+(m+1)).slice(-2) + '-' + ('0'+c.d).slice(-2);
+      if (ds === tStr) cls += ' today';
+      var mk = marks[ds];
+      if (mk) {
+        if (countMode) inner += '<span class="cnt-dot">' + mk + '</span>';
+        else cls += ' mk-' + mk;
+      }
+    }
+    html += '<div class="' + cls + '">' + inner + '</div>';
+  });
+  document.getElementById(gridId).innerHTML = html;
+}
+function calNav(dir, key) {
+  var cur = CAL_CURSOR[key] || new Date();
+  CAL_CURSOR[key] = new Date(cur.getFullYear(), cur.getMonth()+dir, 1);
+  if (key === 'mdCal') refreshDetailCal();
+  else if (key === 'calCal') refreshCalCal();
+}
+
+/* ═══════════════ 계측기 상세 ═══════════════ */
+function findInst(code) {
+  for (var i = 0; i < DATA.instruments.length; i++) if (DATA.instruments[i].code === code) return DATA.instruments[i];
+  return null;
+}
+function openDetail(code) {
+  var it = findInst(code); if (!it) return;
+  MD_CODE = code;
+  CAL_CURSOR['mdCal'] = new Date();
+  var st = instState(it);
+  document.getElementById('mdTitle').textContent = it.name;
+  var ph = document.getElementById('mdPhoto');
+  ph.style.display = ''; ph.onerror = function(){ this.style.display = 'none'; };
+  ph.src = imgSrc(it.code);
+
+  var rows = [
+    ['관리번호', esc(it.code)], ['종류', catOf(it.name)], ['규격', esc(it.spec)], ['S/N', esc(it.sn)],
+    ['제조사', esc(it.maker)]
+  ];
+  if (USER.role !== 'user') rows.push(['점검 주기', it.cycle + '개월']);   // 검교정 정보는 담당자·관리자만
+  rows.push(['사용부서', esc(it.dept)]);
+  rows.push(['상태', '<span class="chip ' + st.cls + '">' + st.label + '</span>']);
+  if (st.rent) rows.push(['대여자', esc(st.rent.renterName) + ' / ' + esc(st.rent.renterDept) + ' (반납예정 ' + esc(st.rent.dueDate) + ')']);
+  if (it.note && !it.noRent) rows.push(['비고', esc(it.note)]);
+  document.getElementById('mdInfo').innerHTML = rows.map(function(r){
+    return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>';
+  }).join('');
+
+  refreshDetailCal();
+
+  // 대여신청 폼
+  var f = document.getElementById('mdRentForm');
+  if (it.noRent) {
+    f.innerHTML = '<div class="empty" style="padding:14px;background:#f8fafc;border-radius:11px;margin-top:12px">🚫 품질팀 검수 전용 계측기로 대여가 불가합니다.</div>';
+  } else if (st.key === 'busy') {
+    f.innerHTML = '<div class="empty" style="padding:14px;background:#f8fafc;border-radius:11px;margin-top:12px">현재 <b>' + st.label + '</b> 상태입니다. 반납 후 대여 신청이 가능합니다.</div>';
+  } else {
+    f.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:14px;margin-top:14px">' +
+      '<div style="font-weight:800;color:var(--navy);font-size:14px">📋 대여 신청</div>' +
+      '<div style="display:flex;gap:8px"><div style="flex:1"><label>대여 시작일</label><input type="date" id="rentStart" value="' + todayStr() + '" onchange="calcDays()"></div>' +
+      '<div style="flex:1"><label>반납 예정일</label><input type="date" id="rentDue" onchange="calcDays()"></div></div>' +
+      '<div id="rentDays" style="font-size:12.5px;color:var(--accent);font-weight:700;margin-top:6px"></div>' +
+      '<label>대여 사유</label><textarea id="rentReason" rows="2" placeholder="예: OO프로젝트 설비 검사"></textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:18px">' +
+      '<button class="btn-primary" style="margin-top:0;flex:2" onclick="submitRent(\'' + esc(it.code) + '\')">바로 신청</button>' +
+      '<button class="btn b-line" style="flex:1;padding:12px 8px" onclick="addCart(\'' + esc(it.code) + '\')">🗂 신청함에 담기</button></div>' +
+      '<div style="font-size:12px;color:var(--tx2);margin-top:8px">신청 → 담당자 승인 → 품질팀 방문 수령 → 대여 시작 순으로 진행됩니다.</div></div>';
+  }
+
+  // 대여 이력
+  var hist = DATA.rentals.filter(function(r){ return r.code === code; })
+    .sort(function(a,b){ return (b.requestedAt||'').localeCompare(a.requestedAt||''); }).slice(0,5);
+  document.getElementById('mdHistory').innerHTML = hist.length ?
+    '<div class="m-sec">🕐 최근 대여 이력</div>' + hist.map(function(r){
+      var lbl = { REQUESTED:'승인대기', APPROVED:'수령대기', RENTED:'대여중', RETURNED:'반납완료', REJECTED:'반려' }[r.status] || r.status;
+      return '<div class="row-item"><div class="row-main"><div class="tt" style="font-size:13px">' + esc(r.renterName) + ' / ' + esc(r.renterDept) + '</div>' +
+        '<div class="ss">' + esc(r.startDate) + ' ~ ' + esc(r.dueDate) + ' · ' + lbl + '</div></div></div>';
+    }).join('') : '';
+
+  var ab = document.getElementById('mdAdminBtns');
+  ab.innerHTML = (USER.role === 'admin')
+    ? '<div class="row-btns"><button class="btn b-line" onclick="openInstEdit(\'' + esc(it.code) + '\')">✎ 수정</button>' +
+      '<button class="btn b-red" onclick="delInst(\'' + esc(it.code) + '\')">삭제</button></div>' : '';
+  openM('mDetail');
+}
+function refreshDetailCal() {
+  if (!MD_CODE) return;
+  var marks = {};
+  var tStr = todayStr();
+  DATA.rentals.forEach(function(r){
+    if (r.code !== MD_CODE) return;
+    if (['REQUESTED','APPROVED','RENTED'].indexOf(r.status) < 0) return;
+    var type = r.status === 'REQUESTED' ? 'wait' : 'rent';
+    var s = r.startDate, e = r.dueDate;
+    if (!s || !e) return;
+    var end = (r.status === 'RENTED' && tStr > e) ? tStr : e;   // 지연 시 오늘까지 표시
+    var d = new Date(s + 'T00:00:00');
+    var stop = new Date(end + 'T00:00:00');
+    var guard = 0;
+    while (d <= stop && guard < 370) {
+      var ds = d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+      marks[ds] = ds > e ? 'late' : type;   // 반납예정일 초과 구간은 빨강
+      d.setDate(d.getDate()+1); guard++;
+    }
+  });
+  renderMonthCal('mdCal', 'mdCalGrid', 'mdCalTitle', marks, false);
+}
+function calcDays() {
+  var s = document.getElementById('rentStart').value;
+  var e = document.getElementById('rentDue').value;
+  var el = document.getElementById('rentDays');
+  if (s && e && e >= s) {
+    var n = Math.round((new Date(e+'T00:00:00') - new Date(s+'T00:00:00')) / 86400000) + 1;
+    el.textContent = '총 ' + n + '일간 대여';
+  } else el.textContent = '';
+}
+function submitRent(code) {
+  var start = document.getElementById('rentStart').value;
+  var due = document.getElementById('rentDue').value;
+  var reason = document.getElementById('rentReason').value.trim();
+  if (!start || !due) { toast('대여 시작일과 반납 예정일을 입력하세요.'); return; }
+  if (due < start) { toast('반납 예정일이 시작일보다 빠릅니다.'); return; }
+  if (!reason) { toast('대여 사유를 입력하세요.'); return; }
+  loadingOn(true);
+  api({ action:'rentRequest', code:code, renterName:USER.name, renterDept:USER.dept, renterRank:USER.rank,
+        renterEmpNo:USER.empNo, reason:reason, startDate:start, dueDate:due }).then(function(r){
+    loadingOn(false);
+    toast(r.message || (r.ok?'신청 완료':'신청 실패'));
+    if (r.ok) { closeM('mDetail'); MD_CODE = null; refresh(); }
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+
+/* ═══════════════ 대여 현황 ═══════════════ */
+function renderDash() {
+  var canDo = USER.role !== 'user';
+  var reqs=[], apprs=[], rents=[], rets=[];
+  DATA.rentals.forEach(function(r){
+    if (r.status === 'REQUESTED') reqs.push(r);
+    else if (r.status === 'APPROVED') apprs.push(r);
+    else if (r.status === 'RENTED') rents.push(r);
+    else if (r.status === 'RETURNED') rets.push(r);
+  });
+  var late = rents.filter(function(r){ return ddayNum(r.dueDate) < 0; }).length;
+  var total = DATA.instruments.length;
+  var busy = 0;
+  DATA.instruments.forEach(function(it){ if (instState(it).key==='busy') busy++; });
+  var ban = DATA.instruments.filter(function(i){ return i.noRent; }).length;
+  document.getElementById('dashStats').innerHTML =
+    '<div class="stat"><div class="n">' + total + '</div><div class="t">전체</div></div>' +
+    '<div class="stat green"><div class="n">' + (total-busy-ban) + '</div><div class="t">대여가능</div></div>' +
+    '<div class="stat blue"><div class="n">' + rents.length + '</div><div class="t">대여중</div></div>' +
+    '<div class="stat org"><div class="n">' + reqs.length + '</div><div class="t">승인대기</div></div>' +
+    '<div class="stat red"><div class="n">' + late + '</div><div class="t">반납지연</div></div>';
+
+  document.getElementById('cntReq').textContent = reqs.length;
+  document.getElementById('cntAppr').textContent = apprs.length;
+  document.getElementById('cntRent').textContent = rents.length;
+
+  document.getElementById('listReq').innerHTML = reqs.length ? reqs.map(function(r){
+    return '<div class="row-item">' + thumbHtml(r.code) +
+      '<div class="row-main"><div class="tt">' + esc(r.instName) + ' <span class="cd">' + esc(r.code) + '</span></div>' +
+      '<div class="ss">' + esc(r.renterName) + ' ' + esc(r.renterRank) + ' / ' + esc(r.renterDept) + ' · ' + esc(r.startDate) + '~' + esc(r.dueDate) + '</div>' +
+      '<div class="ss">사유: ' + esc(r.reason) + '</div></div>' +
+      (canDo ? '<div class="row-btns"><button class="btn b-green" onclick="doApprove(\'' + r.id + '\')">승인</button>' +
+      '<button class="btn b-red" onclick="doReject(\'' + r.id + '\')">반려</button></div>' : '') + '</div>';
+  }).join('') : '<div class="empty">승인 대기 건이 없습니다.</div>';
+
+  document.getElementById('listAppr').innerHTML = apprs.length ? apprs.map(function(r){
+    return '<div class="row-item">' + thumbHtml(r.code) +
+      '<div class="row-main"><div class="tt">' + esc(r.instName) + ' <span class="cd">' + esc(r.code) + '</span></div>' +
+      '<div class="ss">' + esc(r.renterName) + ' / ' + esc(r.renterDept) + ' · 예정 ' + esc(r.startDate) + '~' + esc(r.dueDate) + '</div></div>' +
+      (canDo ? '<div class="row-btns"><button class="btn b-blue" onclick="doStart(\'' + r.id + '\')">대여 시작</button>' +
+      '<button class="btn b-gray" onclick="doReturn(\'' + r.id + '\',true)">취소</button></div>' : '') + '</div>';
+  }).join('') : '<div class="empty">수령 대기 건이 없습니다.</div>';
+
+  rents.sort(function(a,b){ return ddayNum(a.dueDate) - ddayNum(b.dueDate); });
+  document.getElementById('listRent').innerHTML = rents.length ? rents.map(function(r){
+    return '<div class="row-item">' + thumbHtml(r.code) +
+      '<div class="row-main"><div class="tt">' + esc(r.instName) + ' <span class="cd">' + esc(r.code) + '</span></div>' +
+      '<div class="ss">' + esc(r.renterName) + ' ' + esc(r.renterRank) + ' / ' + esc(r.renterDept) + ' · 반납예정 ' + esc(r.dueDate) +
+      (r.extendLog ? ' <span style="color:var(--warn)">(연장됨)</span>' : '') + '</div></div>' +
+      ddayChip(ddayNum(r.dueDate)) +
+      (canDo ? '<div class="row-btns"><button class="btn b-green" onclick="doReturn(\'' + r.id + '\')">반납 처리</button>' +
+      '<button class="btn b-line" onclick="doExtend(\'' + r.id + '\',\'' + esc(r.dueDate) + '\')">기간 연장</button></div>' : '') + '</div>';
+  }).join('') : '<div class="empty">대여중인 계측기가 없습니다.</div>';
+
+  rets.sort(function(a,b){ return (b.returnedAt||'').localeCompare(a.returnedAt||''); });
+  document.getElementById('listRet').innerHTML = rets.length ? rets.slice(0,10).map(function(r){
+    return '<div class="row-item"><div class="row-main"><div class="tt">' + esc(r.instName) + '</div>' +
+      '<div class="ss">' + esc(r.renterName) + ' / ' + esc(r.renterDept) + ' · 반납 ' + esc((r.returnedAt||'').substring(0,10)) + '</div></div>' +
+      '<span class="chip c-ok">반납완료</span></div>';
+  }).join('') : '<div class="empty">반납 이력이 없습니다.</div>';
+}
+function doApprove(id) {
+  if (!confirm('이 대여 신청을 승인할까요?\n신청자에게 승인 알림이 발송됩니다.')) return;
+  loadingOn(true);
+  api({ action:'rentApprove', id:id, senderEmpNo:USER.empNo }).then(function(r){
+    loadingOn(false); toast(r.message); if (r.ok) refresh();
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+function doReject(id) {
+  var reason = prompt('반려 사유를 입력하세요:');
+  if (reason === null) return;
+  loadingOn(true);
+  api({ action:'rentReject', id:id, reason:reason, senderEmpNo:USER.empNo }).then(function(r){
+    loadingOn(false); toast(r.message); if (r.ok) refresh();
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+function doStart(id) {
+  if (!confirm('신청자가 계측기를 수령했습니까?\n[확인]을 누르면 대여가 시작됩니다.')) return;
+  loadingOn(true);
+  api({ action:'rentStart', id:id }).then(function(r){
+    loadingOn(false); toast(r.message); if (r.ok) refresh();
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+function doReturn(id, isCancel) {
+  if (!confirm(isCancel ? '이 승인 건을 취소 처리할까요?' : '반납 완료 처리할까요?')) return;
+  loadingOn(true);
+  api({ action:'rentReturn', id:id }).then(function(r){
+    loadingOn(false); toast(r.message); if (r.ok) refresh();
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+function doExtend(id, cur) {
+  var d = prompt('새 반납 예정일을 입력하세요 (YYYY-MM-DD):', cur);
+  if (!d) return;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { toast('날짜 형식이 올바르지 않습니다.'); return; }
+  loadingOn(true);
+  api({ action:'rentExtend', id:id, newDue:d, senderEmpNo:USER.empNo }).then(function(r){
+    loadingOn(false); toast(r.message); if (r.ok) refresh();
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+
+/* ═══════════════ 내 대여 (스테퍼) ═══════════════ */
+function stepperHtml(r) {
+  var steps = ['신청','승인','수령·대여','반납'];
+  var cur = { REQUESTED:0, APPROVED:1, RENTED:2, RETURNED:3 }[r.status];
+  if (r.status === 'REJECTED') {
+    return '<div class="stepper">' +
+      '<div class="step done"><div class="sc">✓</div><div class="sl">신청</div></div>' +
+      '<div class="step rej"><div class="sc">✕</div><div class="sl">반려</div></div>' +
+      '<div class="step"><div class="sc">3</div><div class="sl">수령·대여</div></div>' +
+      '<div class="step"><div class="sc">4</div><div class="sl">반납</div></div></div>';
+  }
+  return '<div class="stepper">' + steps.map(function(s, i){
+    var cls = i < cur ? 'done' : (i === cur ? (r.status==='RETURNED' ? 'done' : 'cur') : '');
+    var ic = (i < cur || r.status==='RETURNED' && i===cur) ? '✓' : (i+1);
+    return '<div class="step ' + cls + '"><div class="sc">' + ic + '</div><div class="sl">' + s + '</div></div>';
+  }).join('') + '</div>';
+}
+function renderMine() {
+  var mine = DATA.rentals.filter(function(r){ return r.renterName === USER.name; });
+  mine.sort(function(a,b){ return (b.requestedAt||'').localeCompare(a.requestedAt||''); });
+  var lbl = { REQUESTED:['승인 대기','c-wait'], APPROVED:['수령 대기 — 품질팀 방문','c-appr'], RENTED:['대여중','c-rent'],
+              RETURNED:['반납완료','c-ok'], REJECTED:['반려','c-late'] };
+  document.getElementById('listMine').innerHTML = mine.length ? mine.map(function(r){
+    var L = lbl[r.status] || [r.status,'c-ban'];
+    var dd = '';
+    if (r.status === 'RENTED') {
+      var n = ddayNum(r.dueDate);
+      dd = ' ' + ddayChip(n);
+      if (n < 0) L = ['반납 지연 — 반납해 주세요','c-late'];
+    }
+    return '<div class="card"><div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">' + thumbHtml(r.code) +
+      '<div style="flex:1;min-width:160px"><div style="font-weight:800;font-size:14.5px">' + esc(r.instName) + ' <span style="color:var(--tx3);font-size:12px;font-weight:500">' + esc(r.code) + '</span></div>' +
+      '<div style="font-size:12.5px;color:var(--tx2)">' + esc(r.startDate) + ' ~ ' + esc(r.dueDate) +
+      (r.extendLog ? ' <span style="color:var(--warn)">(연장됨)</span>' : '') + '</div></div>' +
+      '<span class="chip ' + L[1] + '">' + L[0] + '</span>' + dd + '</div>' +
+      stepperHtml(r) +
+      (r.status==='REJECTED' && r.rejectReason ? '<div style="font-size:12.5px;color:var(--bad);margin-top:6px">반려 사유: ' + esc(r.rejectReason) + '</div>' : '') +
+      '</div>';
+  }).join('') : '<div class="card"><div class="empty">대여 이력이 없습니다.<br><button class="btn b-navy" style="margin-top:10px" onclick="go(\'pInst\')">계측기 보러가기</button></div></div>';
+}
+
+/* ═══════════════ 검교정 ═══════════════ */
+function cycleProgress(it) {
+  if (!it.calDone || !it.calPlan) return 0;
+  var s = new Date(it.calDone + 'T00:00:00').getTime();
+  var e = new Date(it.calPlan + 'T00:00:00').getTime();
+  var n = new Date(todayStr() + 'T00:00:00').getTime();
+  if (e <= s) return 100;
+  return Math.min(100, Math.max(0, Math.round((n - s) / (e - s) * 100)));
+}
+function renderCal() {
+  var list = DATA.instruments.slice().sort(function(a,b){
+    return (a.calPlan||'9999').localeCompare(b.calPlan||'9999');
+  });
+  var over=0, d30=0, d60=0;
+  list.forEach(function(it){
+    var n = ddayNum(it.calPlan);
+    if (n < 0) over++;
+    else if (n <= 30) d30++;
+    else if (n <= 60) d60++;
+  });
+  document.getElementById('calStats').innerHTML =
+    '<div class="stat"><div class="n">' + list.length + '</div><div class="t">전체</div></div>' +
+    '<div class="stat red"><div class="n">' + over + '</div><div class="t">기한경과</div></div>' +
+    '<div class="stat red"><div class="n">' + d30 + '</div><div class="t">30일 이내</div></div>' +
+    '<div class="stat org"><div class="n">' + d60 + '</div><div class="t">60일 이내</div></div>' +
+    '<div class="stat green"><div class="n">' + (list.length-over-d30-d60) + '</div><div class="t">여유</div></div>';
+  document.getElementById('cntCal').textContent = list.length;
+
+  document.getElementById('listCal').innerHTML = list.map(function(it){
+    var pct = cycleProgress(it);
+    var barColor = pct >= 92 ? 'var(--bad)' : (pct >= 75 ? 'var(--warn)' : 'var(--navy-l)');
+    return '<div class="row-item"><div class="row-main"><div class="tt">' + esc(it.name) + ' <span class="cd">' + esc(it.code) + '</span></div>' +
+      '<div class="ss">시행 ' + esc(it.calDone||'-') + ' → 계획 <b>' + esc(it.calPlan||'-') + '</b> · 주기 ' + it.cycle + '개월' +
+      (it.noRent ? ' · <span style="color:var(--tx3)">검수전용</span>' : '') + '</div>' +
+      '<div class="ht" style="height:6px;margin-top:5px;background:#eef2f7;border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px"></div></div></div>' +
+      ddayChip(ddayNum(it.calPlan)) +
+      '<div class="row-btns"><button class="btn b-green" onclick="doCalDone(\'' + esc(it.code) + '\')">검교정 완료</button></div></div>';
+  }).join('');
+
+  refreshCalCal();
+}
+function refreshCalCal() {
+  var marks = {};
+  DATA.instruments.forEach(function(it){
+    if (it.calPlan) marks[it.calPlan] = (marks[it.calPlan]||0) + 1;
+  });
+  renderMonthCal('calCal', 'calCalGrid', 'calCalTitle', marks, true);
+  // 해당 월 계획 목록
+  var cur = CAL_CURSOR['calCal'];
+  var key = cur.getFullYear() + '-' + ('0'+(cur.getMonth()+1)).slice(-2);
+  var mlist = DATA.instruments.filter(function(it){ return (it.calPlan||'').indexOf(key) === 0; })
+    .sort(function(a,b){ return a.calPlan.localeCompare(b.calPlan); });
+  document.getElementById('calMonthList').innerHTML = mlist.length ?
+    '<div style="font-size:12.5px;font-weight:700;color:var(--tx2);margin-bottom:4px">이 달의 검교정 계획 ' + mlist.length + '건</div>' +
+    mlist.map(function(it){
+      return '<div class="row-item" style="padding:8px 2px"><div class="row-main"><div class="tt" style="font-size:13px">' + esc(it.name) + ' <span class="cd">' + esc(it.code) + '</span></div></div>' +
+        '<span style="font-size:12.5px;font-weight:700;color:var(--navy)">' + esc(it.calPlan) + '</span></div>';
+    }).join('') : '<div class="empty" style="padding:12px 0">이 달에는 검교정 계획이 없습니다.</div>';
+}
+function doCalDone(code) {
+  var d = prompt('검교정 시행일을 입력하세요 (YYYY-MM-DD):', todayStr());
+  if (!d) return;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { toast('날짜 형식이 올바르지 않습니다.'); return; }
+  loadingOn(true);
+  api({ action:'calComplete', code:code, date:d }).then(function(r){
+    loadingOn(false); toast(r.message); if (r.ok) refresh();
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+
+/* ═══════════════ 알림 ═══════════════ */
+function renderNoti() {
+  var list = DATA.notifications || [];
+  var lastSeen = localStorage.getItem('ETS_INST_NOTI_SEEN') || '';
+  var unseen = list.filter(function(n){ return n.id > lastSeen; }).length;
+  document.querySelectorAll('.nb').forEach(function(b){
+    b.style.display = unseen ? 'flex' : 'none';
+    b.textContent = unseen > 99 ? '99+' : unseen;
+  });
+  document.getElementById('notiList').innerHTML = list.length ? list.map(function(n){
+    var icon = n.type === 'CAL' ? '🔬' : '⚠️';
+    return '<div class="noti-item">' + icon + ' ' + esc(n.message) + '<div class="tm">' + esc(n.createdAt) + '</div></div>';
+  }).join('') : '<div class="empty">알림이 없습니다.</div>';
+}
+function toggleNoti() {
+  var p = document.getElementById('notiPanel');
+  p.classList.toggle('on');
+  if (p.classList.contains('on') && DATA.notifications.length) {
+    localStorage.setItem('ETS_INST_NOTI_SEEN', DATA.notifications[0].id);
+    document.querySelectorAll('.nb').forEach(function(b){ b.style.display = 'none'; });
+  }
+}
+document.addEventListener('click', function(e){
+  var p = document.getElementById('notiPanel');
+  if (!p.classList.contains('on')) return;
+  if (p.contains(e.target)) return;
+  var b1 = document.getElementById('bellBtnPc'), b2 = document.getElementById('bellBtnMo');
+  if (b1.contains(e.target) || b2.contains(e.target)) return;
+  p.classList.remove('on');
+});
+
+/* ═══════════════ 관리자 ═══════════════ */
+var ORG_SELECTED = {};
+function renderMgrTags() {
+  var t = document.getElementById('mgrTags');
+  t.innerHTML = DATA.managers.length ? DATA.managers.map(function(m){
+    return '<span class="mgr-tag">' + esc(m.name) + ' ' + esc(m.rank) + '</span>';
+  }).join('') : '<span style="font-size:13px;color:var(--tx3)">지정된 담당자가 없습니다.</span>';
+}
+function openOrg() {
+  ORG_SELECTED = {};
+  DATA.managers.forEach(function(m){ ORG_SELECTED[m.name] = m; });
+  openM('mOrg');
+  api({ action:'orgtree' }).then(function(r){
+    if (!r.ok) { document.getElementById('orgTree').innerHTML = '<div class="empty">조직도를 불러오지 못했습니다.</div>'; return; }
+    r.tree.sort(function(a,b){
+      var qa = a.dept.indexOf('품질') >= 0 ? 0 : 1, qb = b.dept.indexOf('품질') >= 0 ? 0 : 1;
+      return qa - qb || a.dept.localeCompare(b.dept);
+    });
+    document.getElementById('orgTree').innerHTML = r.tree.map(function(d, di){
+      var open = d.dept.indexOf('품질') >= 0 ? ' open' : '';
+      return '<div class="org-dept' + open + '" id="orgD' + di + '">' +
+        '<button onclick="document.getElementById(\'orgD' + di + '\').classList.toggle(\'open\')">' +
+        esc(d.dept) + ' <span style="color:var(--tx3);font-size:12px">' + d.count + '명 ▾</span></button>' +
+        '<div class="org-members">' + d.members.map(function(m){
+          var chk = ORG_SELECTED[m.name] ? ' checked' : '';
+          return '<label><input type="checkbox"' + chk + ' onchange="orgToggle(this,\'' + esc(m.name) + '\',\'' + esc(m.rank) + '\',\'' + esc(d.dept) + '\',\'' + esc(m.empNo) + '\')">' +
+            esc(m.name) + ' <span style="color:var(--tx3);font-size:12px">' + esc(m.rank) + '</span></label>';
+        }).join('') + '</div></div>';
+    }).join('');
+  }).catch(function(){
+    document.getElementById('orgTree').innerHTML = '<div class="empty">조직도를 불러오지 못했습니다.</div>';
+  });
+}
+function orgToggle(cb, name, rank, dept, empNo) {
+  if (cb.checked) ORG_SELECTED[name] = { name:name, rank:rank, dept:dept, empNo:empNo };
+  else delete ORG_SELECTED[name];
+}
+function saveManagers() {
+  var list = Object.keys(ORG_SELECTED).map(function(k){ return ORG_SELECTED[k]; });
+  loadingOn(true);
+  api({ action:'setManagers', list: JSON.stringify(list) }).then(function(r){
+    loadingOn(false); toast(r.message);
+    if (r.ok) { closeM('mOrg'); refresh(); }
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+function openInstEdit(code) {
+  closeM('mDetail');
+  var it = code ? findInst(code) : null;
+  document.getElementById('meTitle').textContent = it ? '계측기 수정' : '신규 계측기 등록';
+  document.getElementById('meCode').value = it ? it.code : '';
+  document.getElementById('meCode').readOnly = !!it;
+  document.getElementById('meName').value = it ? it.name : '';
+  document.getElementById('meSpec').value = it ? it.spec : '';
+  document.getElementById('meSn').value = it ? it.sn : '';
+  document.getElementById('meMaker').value = it ? it.maker : '';
+  document.getElementById('meCycle').value = it ? it.cycle : 12;
+  document.getElementById('meCalDone').value = it ? it.calDone : '';
+  document.getElementById('meCalPlan').value = it ? it.calPlan : '';
+  document.getElementById('meDept').value = it ? it.dept : '품질팀';
+  document.getElementById('meNoRent').checked = it ? it.noRent : false;
+  document.getElementById('meNote').value = it ? it.note : '';
+  openM('mEdit');
+}
+function saveInst() {
+  var d = {
+    code: document.getElementById('meCode').value.trim(),
+    name: document.getElementById('meName').value.trim(),
+    spec: document.getElementById('meSpec').value.trim(),
+    sn: document.getElementById('meSn').value.trim(),
+    maker: document.getElementById('meMaker').value.trim(),
+    cycle: Number(document.getElementById('meCycle').value) || 12,
+    calDone: document.getElementById('meCalDone').value,
+    calPlan: document.getElementById('meCalPlan').value,
+    dept: document.getElementById('meDept').value.trim(),
+    noRent: document.getElementById('meNoRent').checked,
+    note: document.getElementById('meNote').value.trim()
+  };
+  if (!d.code || !d.name) { toast('관리번호와 계측기명은 필수입니다.'); return; }
+  loadingOn(true);
+  api({ action:'instSave', data: JSON.stringify(d) }).then(function(r){
+    loadingOn(false); toast(r.message);
+    if (r.ok) { closeM('mEdit'); refresh(); }
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+function delInst(code) {
+  if (!confirm('[' + code + '] 계측기를 삭제할까요?\n삭제 후 되돌릴 수 없습니다.')) return;
+  loadingOn(true);
+  api({ action:'instDelete', code:code }).then(function(r){
+    loadingOn(false); toast(r.message);
+    if (r.ok) { closeM('mDetail'); MD_CODE = null; refresh(); }
+  }).catch(function(){ loadingOn(false); toast('서버 연결 실패'); });
+}
+
+/* ═══════════════ PDF 출력 ═══════════════ */
+function printDoc(title, sub, headHtml, bodyHtml, landscape) {
+  var w = window.open('', '_blank');
+  w.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>' + title + '</title><style>' +
+    '@page{size:A4 ' + (landscape?'landscape':'portrait') + ';margin:14mm 12mm}' +
+    '*{margin:0;padding:0;box-sizing:border-box}' +
+    'body{font-family:"Malgun Gothic","Noto Sans KR",sans-serif;color:#1e293b;font-size:10.5pt}' +
+    '.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1e3a5f;padding-bottom:8px;margin-bottom:4px}' +
+    '.hd h1{font-size:17pt;color:#1e3a5f;letter-spacing:2px}' +
+    '.hd .co{font-size:10pt;color:#64748b;text-align:right;line-height:1.4}' +
+    '.meta{display:flex;justify-content:space-between;font-size:9pt;color:#475569;margin:6px 0 10px}' +
+    'table{width:100%;border-collapse:collapse;font-size:8.5pt}' +
+    'th{background:#1e3a5f;color:#fff;padding:6px 4px;border:1px solid #1e3a5f;font-weight:600;white-space:nowrap}' +
+    'td{border:1px solid #cbd5e1;padding:5px 4px;text-align:center;vertical-align:middle}' +
+    'td.l{text-align:left;padding-left:6px}' +
+    'tr:nth-child(even) td{background:#f8fafc}' +
+    '.tag{display:inline-block;font-size:7.5pt;font-weight:700;border-radius:3px;padding:1px 5px}' +
+    '.t-ok{background:#dcfce7;color:#15803d}.t-rent{background:#dbeafe;color:#1d4ed8}' +
+    '.t-late{background:#fee2e2;color:#b91c1c}.t-wait{background:#fef3c7;color:#b45309}.t-ban{background:#e2e8f0;color:#475569}' +
+    '.ft{margin-top:12px;display:flex;justify-content:space-between;font-size:8.5pt;color:#94a3b8}' +
+    'thead{display:table-header-group}tr{page-break-inside:avoid}' +
+    '</style></head><body>' +
+    '<div class="hd"><h1>' + title + '</h1><div class="co">(주)이티에스 품질팀<br>ETS 계측기 관리시스템</div></div>' +
+    '<div class="meta"><span>' + sub + '</span><span>출력일: ' + todayStr() + ' · 출력자: ' + esc(USER.name) + ' ' + esc(USER.rank) + '</span></div>' +
+    '<table><thead>' + headHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>' +
+    '<div class="ft"><span>본 문서는 ETS 계측기 관리시스템에서 자동 생성되었습니다.</span></div>' +
+    '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>');
+  w.document.close();
+}
+function printRent() {
+  var from = document.getElementById('prFrom').value;
+  var to = document.getElementById('prTo').value;
+  var list = DATA.rentals.filter(function(r){
+    if (r.status === 'REJECTED') return false;
+    if (from && r.startDate < from) return false;
+    if (to && r.startDate > to) return false;
+    return true;
+  });
+  if (!list.length) { toast('해당 기간의 대여 기록이 없습니다.'); return; }
+  list.sort(function(a,b){ return a.startDate.localeCompare(b.startDate); });
+  var stTag = { REQUESTED:'<span class="tag t-wait">승인대기</span>', APPROVED:'<span class="tag t-wait">수령대기</span>',
+                RENTED:'<span class="tag t-rent">대여중</span>', RETURNED:'<span class="tag t-ok">반납완료</span>' };
+  var head = '<tr><th style="width:4%">NO</th><th style="width:14%">계측기명</th><th style="width:9%">관리번호</th>' +
+    '<th style="width:11%">규격</th><th style="width:16%">대여사유</th><th style="width:8%">대여일</th>' +
+    '<th style="width:11%">대여자</th><th style="width:8%">반납예정</th><th style="width:8%">반납일</th>' +
+    '<th style="width:7%">상태</th><th>비고</th></tr>';
+  var body = list.map(function(r, i){
+    var tag = stTag[r.status] || r.status;
+    if (r.status === 'RENTED' && ddayNum(r.dueDate) < 0) tag = '<span class="tag t-late">반납지연</span>';
+    var inst = findInst(r.code);
+    return '<tr><td>' + (i+1) + '</td><td class="l">' + esc(r.instName) + '</td><td>' + esc(r.code) + '</td>' +
+      '<td>' + esc(inst ? inst.spec : '') + '</td><td class="l">' + esc(r.reason) + '</td><td>' + esc(r.startDate) + '</td>' +
+      '<td>' + esc(r.renterName) + ' ' + esc(r.renterRank) + '<br><span style="font-size:7.5pt;color:#64748b">' + esc(r.renterDept) + '</span></td>' +
+      '<td>' + esc(r.dueDate) + '</td><td>' + esc((r.returnedAt||'').substring(0,10)) + '</td>' +
+      '<td>' + tag + '</td><td style="font-size:7.5pt">' + esc(r.extendLog ? '연장: ' + r.extendLog : '') + '</td></tr>';
+  }).join('');
+  var sub = '대여 기간: ' + (from||'전체') + ' ~ ' + (to||'전체') + ' · 총 ' + list.length + '건';
+  printDoc('계측기 대여대장', sub, head, body, true);
+}
+function printCal() {
+  var from = document.getElementById('pcFrom').value;
+  var to = document.getElementById('pcTo').value;
+  var list = DATA.instruments.filter(function(it){
+    if (from && (it.calPlan||'') < from) return false;
+    if (to && (it.calPlan||'9999') > to) return false;
+    return true;
+  });
+  if (!list.length) { toast('해당 기간의 계측기가 없습니다.'); return; }
+  list.sort(function(a,b){ return (a.calPlan||'9999').localeCompare(b.calPlan||'9999'); });
+  var head = '<tr><th style="width:4%">NO</th><th style="width:10%">관리번호</th><th style="width:17%">계측기명</th>' +
+    '<th style="width:13%">규격</th><th style="width:11%">S/N</th><th style="width:10%">제조사</th>' +
+    '<th style="width:5%">주기</th><th style="width:9%">시행일자</th><th style="width:9%">계획일</th>' +
+    '<th style="width:7%">D-day</th><th>비고</th></tr>';
+  var body = list.map(function(it, i){
+    var n = ddayNum(it.calPlan);
+    var dd = it.calPlan ? (n < 0 ? '<span class="tag t-late">D+' + (-n) + '</span>' :
+             n <= 30 ? '<span class="tag t-late">D-' + n + '</span>' :
+             n <= 60 ? '<span class="tag t-wait">D-' + n + '</span>' : 'D-' + n) : '-';
+    return '<tr><td>' + (i+1) + '</td><td>' + esc(it.code) + '</td><td class="l">' + esc(it.name) + '</td>' +
+      '<td>' + esc(it.spec) + '</td><td>' + esc(it.sn) + '</td><td>' + esc(it.maker) + '</td>' +
+      '<td>' + it.cycle + '</td><td>' + esc(it.calDone||'-') + '</td><td><b>' + esc(it.calPlan||'-') + '</b></td>' +
+      '<td>' + dd + '</td><td>' + (it.noRent ? '<span class="tag t-ban">대여금지</span>' : esc(it.note)) + '</td></tr>';
+  }).join('');
+  var sub = '검교정 계획일: ' + (from||'전체') + ' ~ ' + (to||'전체') + ' · 총 ' + list.length + '대';
+  printDoc('계측기 검교정 현황', sub, head, body, true);
+}
+
+/* ═══════════════ 네비게이션 ═══════════════ */
+function go(pid) {
+  if (pid === 'pCart') renderCart();
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('on'); });
+  document.getElementById(pid).classList.add('on');
+  document.querySelectorAll('#sbNav button, #bottomNav button').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-p') === pid);
+  });
+  window.scrollTo(0,0);
+}
+function openM(id){ document.getElementById(id).classList.add('on'); }
+function closeM(id){ document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.modal-bg').forEach(function(bg){
+  bg.addEventListener('click', function(e){ if (e.target === bg) bg.classList.remove('on'); });
+});
+document.getElementById('loginPhone').addEventListener('keydown', function(e){ if (e.key==='Enter') doLogin(); });
+
+/* 자동 로그인 */
+(function(){
+  var saved = localStorage.getItem('ETS_INST_USER');
+  if (saved) {
+    try { USER = JSON.parse(saved); enterApp(); } catch(e){}
+  }
+})();
+</script>
+</body>
+</html>
